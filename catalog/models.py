@@ -39,7 +39,7 @@ class Category(TimeStampedModel):
     icon = models.ImageField(
         max_length=50,
         blank=True,
-        help_text="Optional icon name, e.g. 'book', 'music', 'star'"
+        help_text="Optional icon name, e.g. 'book', 'music', 'star'",
     )
 
     # Sorting and visibility
@@ -57,11 +57,13 @@ class Category(TimeStampedModel):
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
+
 class Video(TimeStampedModel):
     """
     YouTube video added by a specific user.
     Displayed inside the application using youtube-nocookie.com
     """
+
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -91,11 +93,11 @@ class Video(TimeStampedModel):
         null=True,
     )
 
-    #Sorting and status
+    # Sorting and status
     order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
 
-    #Optional metadata
+    # Optional metadata
     duration_seconds = models.PositiveIntegerField(
         blank=True,
         null=True,
@@ -114,10 +116,7 @@ class Video(TimeStampedModel):
 
     @property
     def embed_url(self):
-        return (
-            f"https://youtube-nocookie.com/embed/"
-            f"{self.youtube_id}?rel=0"
-        )
+        return f"https://youtube-nocookie.com/embed/" f"{self.youtube_id}?rel=0"
 
     def __str__(self):
         return self.title
@@ -128,6 +127,7 @@ class ChildProfile(TimeStampedModel):
     Child profile linked to a parent account.
     Can be used for PIN protection and viewing limits.
     """
+
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -162,15 +162,12 @@ class WatchHistory(TimeStampedModel):
     """
     Stores information about which child watched which video.
     """
+
     child = models.ForeignKey(
-        ChildProfile,
-        on_delete=models.CASCADE,
-        related_name="watch_history"
+        ChildProfile, on_delete=models.CASCADE, related_name="watch_history"
     )
     video = models.ForeignKey(
-        Video,
-        on_delete=models.CASCADE,
-        related_name="watch_history"
+        Video, on_delete=models.CASCADE, related_name="watch_history"
     )
 
     watched_at = models.DateTimeField(auto_now_add=True)
@@ -183,4 +180,3 @@ class WatchHistory(TimeStampedModel):
 
     def __str__(self):
         return f"{self.child.name} watched {self.video.title}"
-    
