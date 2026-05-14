@@ -23,7 +23,7 @@ from app import settings
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/videos/", include("catalog.urls", namespace="catalog")),
+    path("api/", include("catalog.urls", namespace="catalog")),
     path("api/user/", include("user.urls", namespace="user")),
 ]
 
