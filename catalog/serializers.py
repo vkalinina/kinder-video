@@ -1,9 +1,21 @@
 from rest_framework import serializers
+
 from .models import Category, Video, ChildProfile, WatchHistory
 
 
 class CategorySerializer(serializers.ModelSerializer):
     video_count = serializers.IntegerField(source="videos.count", read_only=True)
+
+    icon = serializers.ImageField(
+        required=False,
+        allow_null=True,
+        write_only=True
+    )
+    icon_url = serializers.ImageField(
+        source="icon",
+        read_only=True
+    )
+    order = serializers.IntegerField(min_value=0, max_value=32767, default=0)
 
     class Meta:
         model = Category
@@ -14,6 +26,7 @@ class CategorySerializer(serializers.ModelSerializer):
             "description",
             "color",
             "icon",
+            "icon_url",
             "order",
             "is_active",
             "video_count",
@@ -25,7 +38,21 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class VideoSerializer(serializers.ModelSerializer):
     embed_url = serializers.ReadOnlyField()
+
+    # Выпадающий список категорий — только категории текущего пользователя
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.none(),  # queryset переопределяется в __init__
+    )
     category_name = serializers.CharField(source="category.name", read_only=True)
+
+    # Явно ImageField для Swagger — кнопка загрузки файла
+    thumbnail = serializers.ImageField(required=False, allow_null=True, use_url=True)
+
+    # Нормальные диапазоны для числовых полей
+    order = serializers.IntegerField(min_value=0, max_value=32767, default=0)
+    duration_seconds = serializers.IntegerField(
+        min_value=0, max_value=86400, required=False, allow_null=True
+    )
 
     class Meta:
         model = Video
@@ -48,8 +75,18 @@ class VideoSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "slug", "embed_url", "created_at", "updated_at"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Фильтруем категории по текущему пользователю — так в Swagger
+        # выпадающий список покажет только свои категории
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            self.fields["category"].queryset = Category.objects.filter(
+                owner=request.user
+            )
+
     def validate_category(self, category):
-        """Ensure the category belongs to the current user."""
+        """Категория должна принадлежать текущему пользователю."""
         request = self.context.get("request")
         if request and category.owner != request.user:
             raise serializers.ValidationError(
@@ -59,9 +96,11 @@ class VideoSerializer(serializers.ModelSerializer):
 
 
 class VideoListSerializer(serializers.ModelSerializer):
-    """Lightweight serializer for list views (no heavy fields)."""
+    """Лёгкий сериалайзер для list-экшенов."""
 
     embed_url = serializers.ReadOnlyField()
+    thumbnail = serializers.ImageField(required=False, allow_null=True, use_url=True)
+    order = serializers.IntegerField(min_value=0, max_value=32767, default=0)
 
     class Meta:
         model = Video
@@ -80,6 +119,14 @@ class VideoListSerializer(serializers.ModelSerializer):
 
 
 class ChildProfileSerializer(serializers.ModelSerializer):
+    daily_limit_minutes = serializers.IntegerField(
+        min_value=0,
+        max_value=1440,
+        required=False,
+        allow_null=True,
+        help_text="Дневной лимит просмотра в минутах (макс. 1440 = 24 часа).",
+    )
+
     class Meta:
         model = ChildProfile
         fields = [
@@ -93,7 +140,6 @@ class ChildProfileSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
         extra_kwargs = {
-            # Never expose the PIN in read responses
             "pin_code": {"write_only": True},
         }
 
@@ -101,6 +147,7 @@ class ChildProfileSerializer(serializers.ModelSerializer):
 class WatchHistorySerializer(serializers.ModelSerializer):
     video_title = serializers.CharField(source="video.title", read_only=True)
     child_name = serializers.CharField(source="child.name", read_only=True)
+    watched_seconds = serializers.IntegerField(min_value=0, max_value=86400, default=0)
 
     class Meta:
         model = WatchHistory
@@ -116,7 +163,7 @@ class WatchHistorySerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "watched_at"]
 
     def validate_child(self, child):
-        """Ensure the child profile belongs to the current user."""
+        """Профиль ребёнка должен принадлежать текущему пользователю."""
         request = self.context.get("request")
         if request and child.owner != request.user:
             raise serializers.ValidationError(

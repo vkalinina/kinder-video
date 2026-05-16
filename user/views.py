@@ -12,6 +12,12 @@ class CreateUserView(generics.CreateAPIView):
     permission_classes = ()
 
 
+class CreateTokenView(ObtainAuthToken):
+    renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+    serializer_class = AuthTokenSerializer
+    permission_classes = ()
+
+
 class LoginUserView(ObtainAuthToken):
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
     serializer_class = AuthTokenSerializer

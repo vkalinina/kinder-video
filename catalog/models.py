@@ -37,9 +37,11 @@ class Category(TimeStampedModel):
         help_text="The color of the category. HEX color code, e.g. #4F46E5",
     )
     icon = models.ImageField(
+        upload_to="category_icons/",
         max_length=50,
         blank=True,
-        help_text="Optional icon name, e.g. 'book', 'music', 'star'",
+        null=True,
+        help_text="Optional icon image for the category.",
     )
 
     # Sorting and visibility
@@ -54,8 +56,21 @@ class Category(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+            while (
+                Category.objects.filter(owner=self.owner, slug=slug)
+                .exclude(pk=self.pk)
+                .exists()
+            ):
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
 
 
 class Video(TimeStampedModel):
@@ -111,7 +126,17 @@ class Video(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+            while (
+                Category.objects.filter(owner=self.owner, slug=slug)
+                .exclude(pk=self.pk)
+                .exists()
+            ):
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
         super().save(*args, **kwargs)
 
     @property
