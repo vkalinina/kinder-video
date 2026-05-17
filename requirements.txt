@@ -1,12 +1,16 @@
 asgiref==3.11.1
 attrs==26.1.0
+certifi==2026.4.22
+charset-normalizer==3.4.7
 Django==5.2.14
 django-debug-toolbar==6.3.0
+django-environ==0.13.0
 django-filter==25.2
 djangorestframework==3.17.1
 djangorestframework-jwt==1.11.0
 djangorestframework_simplejwt==5.5.1
 drf-spectacular==0.29.0
+idna==3.15
 inflection==0.5.1
 jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
@@ -14,7 +18,9 @@ pillow==12.2.0
 PyJWT==1.7.1
 PyYAML==6.0.3
 referencing==0.37.0
+requests==2.34.2
 rpds-py==0.30.0
 sqlparse==0.5.5
 typing_extensions==4.15.0
 uritemplate==4.2.0
+urllib3==2.7.0
